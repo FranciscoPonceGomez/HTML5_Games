@@ -31,6 +31,7 @@ var map = [
 var mapWidth = 0;		// Number of map blocks in x-direction
 var mapHeight = 0;		// Number of map blocks in y-direction
 var miniMapScale = 8;	// How many pixels to draw a map block
+var CIRCLE = Math.PI * 2;
 
 var Player = {
 	x : 10,
@@ -44,7 +45,13 @@ var Player = {
 
 function movePlayer() {
 	var moveStep = Player.speed * Player.moveSpeed;
-	Player.rotation += Player.direction * Player.rotation;
+	Player.rotation += Player.direction * Player.rotaSpeed;
+
+	// make sure the angle is between 0 and 360 degrees
+	while (Player.rotation < 0) 
+		Player.rotation += CIRCLE;
+	while (Player.rotation >= CIRCLE) 
+		Player.rotation -= CIRCLE;
 
 	// Calculate player next position
 	var newX = Player.x + Math.cos(Player.rotation) * moveStep;
