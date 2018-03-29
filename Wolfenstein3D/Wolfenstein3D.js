@@ -28,43 +28,76 @@ var map = [
 	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-var mapWidth = 0;		// Number of map blocks in x-direction
-var mapHeight = 0;		// Number of map blocks in y-direction
+var mapWidth = map[0].length;
+var mapHeight = map.length;
 var miniMapScale = 8;	// How many pixels to draw a map block
 var CIRCLE = Math.PI * 2;
 
-var Player = {
-	x : 10,
-	y : 15,
-	direction : 0,
-	rotation : 0,
-	speed : 0,
-	moveSpeed : 0.18,
-	rotaSpeed : 6 * Math.PI / 180
+class Player {
+	constructor(x,y,direction,rotation,speed,moveSpeed,rotaSpeed) {
+		this.x = x;
+		this.y = y;
+		this.direction = direction;
+		this.rotation = rotation;
+		this.speed = speed;
+		this.moveSpeed = moveSpeed;
+		this.rotaSpeed = rotaSpeed;
+	}
+
+	Move() {
+		var moveStep = player.speed * player.moveSpeed;
+		player.rotation += player.direction * player.rotaSpeed;
+
+		// make sure the angle is between 0 and 360 degrees
+		while (player.rotation < 0) 
+			player.rotation += CIRCLE;
+		while (player.rotation >= CIRCLE) 
+			player.rotation -= CIRCLE;
+
+		// Calculate player next position
+		var newX = player.x + Math.cos(player.rotation) * moveStep;
+		var newY = player.y + Math.sin(player.rotation) * moveStep;
+
+		// update position
+		if (isValidPosition(newX,newY)) {
+			player.x = newX;
+			player.y = newY;
+		}
+	}
+
+	Render() {
+		var miniMap = $("minimap");
+		var miniMapObjects = $("minimapobjects");
+	
+		var objectCtx = miniMapObjects.getContext("2d");
+		miniMapObjects.width = miniMapObjects.width;
+		//objectCtx.clearRect(0,0,miniMap.width,miniMap.height);
+	
+		objectCtx.fillRect(		// draw a dot at the current player position
+			player.x * miniMapScale - 2, 
+			player.y * miniMapScale - 2,
+			4, 4
+		);
+		objectCtx.beginPath();
+		objectCtx.moveTo(player.x * miniMapScale, player.y * miniMapScale);
+		objectCtx.lineTo(
+			(player.x + Math.cos(player.rotation) * 4) * miniMapScale,
+			(player.y + Math.sin(player.rotation) * 4) * miniMapScale
+		);
+		objectCtx.closePath();
+		objectCtx.stroke();
+	}
 }
 
-function movePlayer() {
-	var moveStep = Player.speed * Player.moveSpeed;
-	Player.rotation += Player.direction * Player.rotaSpeed;
+const player = new Player(25, 10, 0, 0, 0, 0.18, 6 * Math.PI / 180);
 
-	// make sure the angle is between 0 and 360 degrees
-	while (Player.rotation < 0) 
-		Player.rotation += CIRCLE;
-	while (Player.rotation >= CIRCLE) 
-		Player.rotation -= CIRCLE;
-
-	// Calculate player next position
-	var newX = Player.x + Math.cos(Player.rotation) * moveStep;
-	var newY = Player.y + Math.sin(Player.rotation) * moveStep;
-
-	// update position
-	Player.x = newX;
-	Player.y = newY;
+function isValidPosition(x,y) {
+	if (x < 0 || x > mapWidth|| y < 0 || y > mapHeight)
+		return false;
+	return (map[Math.floor(y)][Math.floor(x)] == 0);
 }
 
 function init() {
-	mapWidth = map[0].length;
-	mapHeight = map.length;
 
 	bindKeys();
 
@@ -80,19 +113,19 @@ function bindKeys() {
 		switch(e.keyCode) {
 			// Up. Move player forward
 			case 38:
-				Player.speed = 1;
+				player.speed = 1;
 				break;
 			// Down. Move player backwards
 			case 40:
-				Player.speed = -1;
+				player.speed = -1;
 				break;
 			// Left.
 			case 37:
-				Player.direction = -1;
+				player.direction = -1;
 				break;
 			// Rigth.
 			case 39:
-				Player.direction = 1;
+				player.direction = 1;
 				break;
 		}
 	}
@@ -102,11 +135,11 @@ function bindKeys() {
 		switch(e.keyCode) {
 			case 38:
 			case 40:
-				Player.speed = 0;
+				player.speed = 0;
 				break;
 			case 37:
 			case 39:
-				Player.direction = 0;
+				player.direction = 0;
 				break;
 		}
 	}
@@ -139,36 +172,12 @@ function drawMap() {
 			}
 		}
 	}
-	drawPlayer();
-}
-
-function drawPlayer() {
-
-	var miniMap = $("minimap");
-	var miniMapObjects = $("minimapobjects");
-
-	var objectCtx = miniMapObjects.getContext("2d");
-	miniMapObjects.width = miniMapObjects.width;
-	//objectCtx.clearRect(0,0,miniMap.width,miniMap.height);
-
-	objectCtx.fillRect(		// draw a dot at the current player position
-		Player.x * miniMapScale - 2, 
-		Player.y * miniMapScale - 2,
-		4, 4
-	);
-	objectCtx.beginPath();
-	objectCtx.moveTo(Player.x * miniMapScale, Player.y * miniMapScale);
-	objectCtx.lineTo(
-		(Player.x + Math.cos(Player.rotation) * 4) * miniMapScale,
-		(Player.y + Math.sin(Player.rotation) * 4) * miniMapScale
-	);
-	objectCtx.closePath();
-	objectCtx.stroke();
+	player.Render();
 }
 
 function gameCycle() {
-	movePlayer();
-	drawPlayer();
+	player.Move();
+	player.Render();
 	setTimeout(gameCycle,1000/30);	// 30 fps
 }
 
